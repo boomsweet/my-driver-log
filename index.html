@@ -140,7 +140,6 @@
     </div>
 
     <script>
-        // บังคับ Render ทันทีที่โหลดหน้า
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('date').valueAsDate = new Date();
             renderAll();
@@ -156,7 +155,6 @@
             document.getElementById('otherLocation').classList.toggle('hidden', select.value !== 'อื่นๆ');
         }
 
-        // รีเซ็ตค่ากลับไปที่ PNK ตามที่ต้องการ
         function resetForm() {
             document.getElementById('editId').value = '';
             document.getElementById('amount').value = '';
@@ -264,10 +262,13 @@
             
             let todaySum = 0;
             let monthSum = 0;
+            let grandTotal = 0; // เพิ่มตัวแปรยอดรวมทั้งหมด
             
             history.forEach(item => {
-                if(item.date === today) todaySum += item.amount;
-                if(item.date.substring(0, 7) === currentMonth) monthSum += item.amount;
+                const itemAmount = parseFloat(item.amount);
+                grandTotal += itemAmount; // สะสมยอดรวมทั้งหมด
+                if(item.date === today) todaySum += itemAmount;
+                if(item.date.substring(0, 7) === currentMonth) monthSum += itemAmount;
             });
 
             document.getElementById('todayTotal').innerText = todaySum.toLocaleString() + ' ฿';
@@ -275,22 +276,40 @@
             document.getElementById('recordCount').innerText = `${history.length} รายการ`;
             document.getElementById('clearAllArea').classList.toggle('hidden', history.length === 0);
 
-            // สรุปยอดรายเดือน
+            // คำนวณแยกตามเดือน
             const monthlyObj = history.reduce((acc, item) => {
                 const month = new Date(item.date).toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
                 if(!acc[month]) acc[month] = 0;
-                acc[month] += item.amount;
+                acc[month] += parseFloat(item.amount);
                 return acc;
             }, {});
 
-            document.getElementById('summary').innerHTML = Object.entries(monthlyObj).map(([month, sum]) => `
+            // ส่วนที่แก้ไข: การ Render ยอดรวมรายเดือน + ยอดรวมทั้งหมด (Grand Total)
+            let summaryHTML = '';
+            
+            // 1. แสดงยอดรายเดือน
+            summaryHTML += Object.entries(monthlyObj).map(([month, sum]) => `
                 <div class="bg-white p-4 rounded-3xl shadow-sm flex justify-between items-center border border-slate-50">
                     <span class="font-bold text-slate-600">${month}</span>
                     <span class="text-xl font-black text-blue-600">${sum.toLocaleString()} ฿</span>
                 </div>
             `).join('');
 
-            // แสดงรายการประวัติ
+            // 2. แสดงยอดรวมทั้งหมด (ถ้ามีข้อมูล)
+            if (history.length > 0) {
+                summaryHTML += `
+                    <div class="bg-gradient-to-r from-orange-400 to-orange-500 p-5 rounded-3xl shadow-md flex justify-between items-center text-white mt-4">
+                        <div>
+                            <p class="text-[10px] font-bold uppercase opacity-80">ยอดรวมสะสมทั้งหมด</p>
+                            <p class="text-sm font-bold">ทุกรายการที่บันทึก</p>
+                        </div>
+                        <span class="text-2xl font-black">${grandTotal.toLocaleString()} ฿</span>
+                    </div>
+                `;
+            }
+
+            document.getElementById('summary').innerHTML = summaryHTML;
+
             const listDiv = document.getElementById('historyList');
             if (history.length === 0) {
                 listDiv.innerHTML = '<p class="text-center text-slate-300 py-10 font-bold">ไม่มีประวัติการบันทึก</p>';
@@ -308,7 +327,7 @@
                     </div>
                     <div class="flex items-center gap-3">
                         <div class="text-right">
-                            <div class="font-black text-slate-700">${item.amount.toLocaleString()}฿</div>
+                            <div class="font-black text-slate-700">${parseFloat(item.amount).toLocaleString()}฿</div>
                         </div>
                         <button onclick="editRecord(${item.id})" class="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center btn-active"><i class="fa-solid fa-pen text-xs"></i></button>
                         <button onclick="deleteRecord(${item.id})" class="w-8 h-8 rounded-lg bg-red-50 text-red-400 flex items-center justify-center btn-active"><i class="fa-solid fa-trash text-xs"></i></button>
