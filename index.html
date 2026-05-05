@@ -16,21 +16,27 @@
                 <input type="date" id="date" class="w-full border-2 border-gray-200 rounded-lg p-2 focus:border-blue-500 outline-none">
             </div>
 
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">ประเภทงาน</label>
-                <select id="type" class="w-full border-2 border-gray-200 rounded-lg p-2 focus:border-blue-500 outline-none">
-                    <option value="รับเข้า">📥 รับเข้า</option>
-                    <option value="ส่งออก">📤 ส่งออก</option>
-                </select>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">ประเภทงาน</label>
+                    <select id="type" class="w-full border-2 border-gray-200 rounded-lg p-2 focus:border-blue-500 outline-none">
+                        <option value="รับเข้า">📥 รับเข้า</option>
+                        <option value="ส่งออก">📤 ส่งออก</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">รหัสสถานที่</label>
+                    <select id="locationCode" class="w-full border-2 border-gray-200 rounded-lg p-2 focus:border-blue-500 outline-none">
+                        <option value="PNK">PNK</option>
+                        <option value="HDK">HDK</option>
+                        <option value="SSK">SSK</option>
+                    </select>
+                </div>
             </div>
 
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">สถานที่</label>
-                <select id="location" class="w-full border-2 border-gray-200 rounded-lg p-2 focus:border-blue-500 outline-none">
-                    <option value="PNK">PNK</option>
-                    <option value="HDK">HDK</option>
-                    <option value="SSK">SSK</option>
-                </select>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">ส่งที่ไหน (ระบุสถานที่ละเอียด)</label>
+                <input type="text" id="destination" placeholder="ระบุชื่อโกดัง/สาขา" class="w-full border-2 border-gray-200 rounded-lg p-2 focus:border-blue-500 outline-none">
             </div>
 
             <div>
@@ -38,72 +44,87 @@
                 <input type="number" id="amount" placeholder="ระบุจำนวนเงิน" class="w-full border-2 border-gray-200 rounded-lg p-2 focus:border-blue-500 outline-none">
             </div>
 
-            <button onclick="saveData()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold transition">บันทึกข้อมูล</button>
+            <button onclick="saveData()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold transition shadow-lg">บันทึกข้อมูล</button>
         </div>
 
         <hr class="my-6">
 
-        <h2 class="text-lg font-bold mb-3 text-gray-800">สรุปรายเดือน (พ.ศ.)</h2>
-        <div id="summary" class="space-y-3">
-            </div>
+        <h2 class="text-lg font-bold mb-3 text-gray-800">📊 สรุปจำนวนเที่ยวและรายได้</h2>
+        <div id="summary" class="space-y-3"></div>
     </div>
 
     <script>
         function saveData() {
             const dateInput = document.getElementById('date').value;
             const type = document.getElementById('type').value;
-            const location = document.getElementById('location').value;
+            const locationCode = document.getElementById('locationCode').value;
+            const destination = document.getElementById('destination').value;
             const amount = document.getElementById('amount').value;
 
-            if(!dateInput || !amount) return alert('กรุณากรอกข้อมูลให้ครบครับ');
+            if(!dateInput || !amount || !destination) return alert('กรุณากรอกข้อมูลให้ครบ รวมถึงสถานที่ส่งด้วยครับ');
 
             const record = {
                 date: dateInput,
                 type: type,
-                location: location,
+                locationCode: locationCode,
+                destination: destination,
                 amount: parseFloat(amount)
             };
 
-            let history = JSON.parse(localStorage.getItem('truckLogs') || '[]');
+            let history = JSON.parse(localStorage.getItem('truckLogsV2') || '[]');
             history.push(record);
-            localStorage.setItem('truckLogs', JSON.stringify(history));
+            localStorage.setItem('truckLogsV2', JSON.stringify(history));
 
-            alert('บันทึกเรียบร้อย!');
+            alert('บันทึกสำเร็จ!');
             renderSummary();
-            document.getElementById('amount').value = ''; // เคลียร์ช่องเงินหลังเซฟ
+            
+            // ล้างค่าหลังบันทึก
+            document.getElementById('destination').value = '';
+            document.getElementById('amount').value = '';
         }
 
         function renderSummary() {
-            const history = JSON.parse(localStorage.getItem('truckLogs') || '[]');
+            const history = JSON.parse(localStorage.getItem('truckLogsV2') || '[]');
             const summaryDiv = document.getElementById('summary');
             
-            // จัดกลุ่มตามเดือน
             const monthlyData = history.reduce((acc, item) => {
                 const dateObj = new Date(item.date);
-                const monthName = dateObj.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
-                if (!acc[monthName]) acc[monthName] = { total: 0, count: 0 };
-                acc[monthName].total += item.amount;
-                acc[monthName].count += 1;
+                const monthKey = dateObj.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+                
+                if (!acc[monthKey]) {
+                    acc[monthKey] = { total: 0, count: 0, PNK: 0, HDK: 0, SSK: 0 };
+                }
+                
+                acc[monthKey].total += item.amount;
+                acc[monthKey].count += 1;
+                acc[monthKey][item.locationCode] = (acc[monthKey][item.locationCode] || 0) + 1;
+                
                 return acc;
             }, {});
 
             summaryDiv.innerHTML = '';
             
-            // แสดงผลสรุป
             for (const [month, data] of Object.entries(monthlyData)) {
                 summaryDiv.innerHTML += `
-                    <div class="p-4 bg-blue-50 rounded-lg border border-blue-100 shadow-sm">
-                        <div class="font-bold text-blue-800">${month}</div>
-                        <div class="flex justify-between text-sm text-gray-600 mt-1">
-                            <span>วิ่งทั้งหมด: ${data.count} เที่ยว</span>
-                            <span class="font-bold text-green-600">${data.total.toLocaleString()} บาท</span>
+                    <div class="p-4 bg-white rounded-lg border-l-4 border-blue-500 shadow-sm space-y-2">
+                        <div class="font-bold text-blue-800 text-lg border-b pb-1">${month}</div>
+                        <div class="grid grid-cols-3 gap-1 text-xs text-gray-500 font-semibold">
+                            <div class="bg-gray-100 p-1 rounded text-center">PNK: ${data.PNK}</div>
+                            <div class="bg-gray-100 p-1 rounded text-center">HDK: ${data.HDK}</div>
+                            <div class="bg-gray-100 p-1 rounded text-center">SSK: ${data.SSK}</div>
+                        </div>
+                        <div class="flex justify-between items-end pt-1">
+                            <div class="text-sm">รวม <span class="font-bold text-blue-600 text-base">${data.count}</span> เที่ยว</div>
+                            <div class="text-right">
+                                <span class="text-xs text-gray-400 block">รายได้รวม</span>
+                                <span class="font-bold text-green-600 text-lg">${data.total.toLocaleString()} ฿</span>
+                            </div>
                         </div>
                     </div>
                 `;
             }
         }
 
-        // โหลดข้อมูลเมื่อเปิดเว็บ
         window.onload = renderSummary;
     </script>
 </body>
