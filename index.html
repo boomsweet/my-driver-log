@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บันทึกค่าเที่ยวรถ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6">
+        <h1 class="text-2xl font-bold mb-4 text-blue-600">จดค่าเที่ยวรถ 🚛</h1>
+        
+        <div class="space-y-4 mb-6">
+            <div>
+                <label class="block text-sm font-medium">วันที่</label>
+                <input type="date" id="date" class="w-full border rounded p-2">
+            </div>
+            <div>
+                <label class="block text-sm font-medium">ค่าเที่ยว (บาท)</label>
+                <input type="number" id="amount" placeholder="เช่น 500" class="w-full border rounded p-2">
+            </div>
+            <button onclick="saveData()" class="w-full bg-blue-500 text-white py-2 rounded-lg font-semibold">บันทึกข้อมูล</button>
+        </div>
+
+        <hr class="my-6">
+
+        <h2 class="text-xl font-bold mb-3">สรุปรายเดือน</h2>
+        <div id="summary" class="space-y-2">
+            </div>
+    </div>
+
+    <script>
+        // ฟังก์ชันบันทึกข้อมูล
+        function saveData() {
+            const date = document.getElementById('date').value;
+            const amount = document.getElementById('amount').value;
+
+            if(!date || !amount) return alert('กรุณากรอกข้อมูลให้ครบ');
+
+            const record = { date, amount: parseFloat(amount) };
+            let history = JSON.parse(localStorage.getItem('tripRecords') || '[]');
+            history.push(record);
+            localStorage.setItem('tripRecords', JSON.stringify(history));
+
+            alert('บันทึกสำเร็จ!');
+            renderSummary();
+        }
+
+        // ฟังก์ชันคำนวณและแสดงผล
+        function renderSummary() {
+            const history = JSON.parse(localStorage.getItem('tripRecords') || '[]');
+            const summaryDiv = document.getElementById('summary');
+            
+            // จัดกลุ่มข้อมูลตามเดือน
+            const monthlyData = history.reduce((acc, item) => {
+                const month = item.date.substring(0, 7); // เอาแค่ ปี-เดือน
+                acc[month] = (acc[month] || 0) + item.amount;
+                return acc;
+            }, {});
+
+            summaryDiv.innerHTML = '';
+            for (const [month, total] of Object.entries(monthlyData)) {
+                summaryDiv.innerHTML += `
+                    <div class="flex justify-between p-3 bg-gray-50 rounded border">
+                        <span class="font-medium">${month}</span>
+                        <span class="text-green-600 font-bold">${total.toLocaleString()} บาท</span>
+                    </div>
+                `;
+            }
+        }
+
+        // โหลดข้อมูลเมื่อเปิดหน้าเว็บ
+        window.onload = renderSummary;
+    </script>
+</body>
+</html>
