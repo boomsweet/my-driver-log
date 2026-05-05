@@ -3,129 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>บันทึกค่าเที่ยวรถ</title>
+    <title>Driver Log Pro</title>
+    <link rel="manifest" href="data:application/manifest+json,{'name':'DriverLog','short_name':'DriverLog','start_url':'.','display':'standalone','background_color':'#ffffff','theme_color':'#2563eb'}">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; }
+    </style>
 </head>
-<body class="bg-gray-100 p-4">
-    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md p-6">
-        <h1 class="text-2xl font-bold mb-4 text-blue-700 text-center">บันทึกค่าเที่ยวรถ 🚛</h1>
-        
-        <div class="space-y-4">
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">วันที่/เดือน/พ.ศ.</label>
-                <input type="date" id="date" class="w-full border-2 border-gray-200 rounded-lg p-2 focus:border-blue-500 outline-none">
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">ประเภทงาน</label>
-                    <select id="type" class="w-full border-2 border-gray-200 rounded-lg p-2 focus:border-blue-500 outline-none">
-                        <option value="รับเข้า">📥 รับเข้า</option>
-                        <option value="ส่งออก">📤 ส่งออก</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">รหัสสถานที่</label>
-                    <select id="locationCode" class="w-full border-2 border-gray-200 rounded-lg p-2 focus:border-blue-500 outline-none">
-                        <option value="PNK">PNK</option>
-                        <option value="HDK">HDK</option>
-                        <option value="SSK">SSK</option>
-                    </select>
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">ส่งที่ไหน (ระบุสถานที่ละเอียด)</label>
-                <input type="text" id="destination" placeholder="ระบุชื่อโกดัง/สาขา" class="w-full border-2 border-gray-200 rounded-lg p-2 focus:border-blue-500 outline-none">
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">ค่าเที่ยว (บาท)</label>
-                <input type="number" id="amount" placeholder="ระบุจำนวนเงิน" class="w-full border-2 border-gray-200 rounded-lg p-2 focus:border-blue-500 outline-none">
-            </div>
-
-            <button onclick="saveData()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold transition shadow-lg">บันทึกข้อมูล</button>
+<body class="bg-slate-50 min-h-screen">
+    <div class="max-w-md mx-auto pb-20">
+        <div class="bg-blue-600 p-6 rounded-b-3xl shadow-lg mb-6">
+            <h1 class="text-white text-2xl font-bold text-center italic">DRIVER LOG PRO 🚛</h1>
+            <p class="text-blue-100 text-center text-sm mt-1">บันทึกเที่ยวรถและรายได้</p>
         </div>
 
-        <hr class="my-6">
+        <div class="px-4 space-y-4">
+            <div class="bg-white rounded-2xl shadow-sm p-5 border border-slate-100">
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div class="col-span-2">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">วันที่</label>
+                        <input type="date" id="date" class="w-full bg-slate-50 border-none rounded-xl p-3 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">ประเภทงาน</label>
+                        <select id="type" class="w-full bg-slate-50 border-none rounded-xl p-3 focus:ring-2 focus:ring-blue-500">
+                            <option value="รับเข้า">📥 รับเข้า</option>
+                            <option value="ส่งออก">📤 ส่งออก</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">รหัส</label>
+                        <select id="locationCode" class="w-full bg-slate-50 border-none rounded-xl p-3 focus:ring-2 focus:ring-blue-500">
+                            <option value="PNK">PNK</option>
+                            <option value="HDK">HDK</option>
+                            <option value="SSK">SSK</option>
+                        </select>
+                    </div>
+                </div>
 
-        <h2 class="text-lg font-bold mb-3 text-gray-800">📊 สรุปจำนวนเที่ยวและรายได้</h2>
-        <div id="summary" class="space-y-3"></div>
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">สถานที่ส่ง</label>
+                    <select id="locationSelect" onchange="toggleOtherLocation()" class="w-full bg-slate-50 border-none rounded-xl p-3 focus:ring-2 focus:ring-blue-500 mb-2">
+                        <option value="ป่าตอง">ป่าตอง</option>
+                        <option value="เขาหลัก">เขาหลัก</option>
+                        <option value="สนามบินภูเก็ต">สนามบินภูเก็ต</option>
+                        <option value="สนามบินกระบี่">สนามบินกระบี่</option>
+                        <option value="กะตะ กะรน">กะตะ กะรน</option>
+                        <option value="เกาะลันตา">เกาะลันตา</option>
+                        <option value="ปากบารา">ปากบารา</option>
+                        <option value="Jungle Tour">Jungle Tour</option>
+                        <option value="อื่นๆ">อื่นๆ (ระบุเอง)</option>
+                    </select>
+                    <input type="text" id="otherLocation" placeholder="ระบุสถานที่..." class="hidden w-full bg-yellow-50 border-none rounded-xl p-3 focus:ring-2 focus:ring-yellow-500">
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">ค่าเที่ยว (บาท)</label>
+                    <input type="number" id="amount" placeholder="0.00" class="w-full bg-slate-50 border-none rounded-xl p-3 text-xl font-bold text-blue-600 focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <button onclick="saveData()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-blue-200 shadow-lg hover:bg-blue-700 active:scale-95 transition">
+                    <i class="fa-solid fa-cloud-arrow-up mr-2"></i>บันทึกข้อมูล
+                </button>
+            </div>
+
+            <h2 class="text-lg font-bold text-slate-800 flex items-center mt-8">
+                <i class="fa-solid fa-chart-pie mr-2 text-blue-600"></i>สรุปผลรายเดือน
+            </h2>
+            <div id="summary" class="space-y-3"></div>
+
+            <h2 class="text-lg font-bold text-slate-800 flex items-center mt-8">
+                <i class="fa-solid fa-clock-rotate-left mr-2 text-blue-600"></i>ประวัติการบันทึก
+            </h2>
+            <div id="historyList" class="space-y-2 pb-10"></div>
+        </div>
     </div>
 
     <script>
-        function saveData() {
-            const dateInput = document.getElementById('date').value;
-            const type = document.getElementById('type').value;
-            const locationCode = document.getElementById('locationCode').value;
-            const destination = document.getElementById('destination').value;
-            const amount = document.getElementById('amount').value;
+        // ตั้งวันที่ปัจจุบันเป็นค่าเริ่มต้น
+        document.getElementById('date').valueAsDate = new Date();
 
-            if(!dateInput || !amount || !destination) return alert('กรุณากรอกข้อมูลให้ครบ รวมถึงสถานที่ส่งด้วยครับ');
-
-            const record = {
-                date: dateInput,
-                type: type,
-                locationCode: locationCode,
-                destination: destination,
-                amount: parseFloat(amount)
-            };
-
-            let history = JSON.parse(localStorage.getItem('truckLogsV2') || '[]');
-            history.push(record);
-            localStorage.setItem('truckLogsV2', JSON.stringify(history));
-
-            alert('บันทึกสำเร็จ!');
-            renderSummary();
-            
-            // ล้างค่าหลังบันทึก
-            document.getElementById('destination').value = '';
-            document.getElementById('amount').value = '';
+        function toggleOtherLocation() {
+            const select = document.getElementById('locationSelect');
+            const otherInput = document.getElementById('otherLocation');
+            otherInput.classList.toggle('hidden', select.value !== 'อื่นๆ');
         }
 
-        function renderSummary() {
-            const history = JSON.parse(localStorage.getItem('truckLogsV2') || '[]');
-            const summaryDiv = document.getElementById('summary');
+        function saveData() {
+            const date = document.getElementById('date').value;
+            const type = document.getElementById('type').value;
+            const code = document.getElementById('locationCode').value;
+            const amount = document.getElementById('amount').value;
             
+            let destination = document.getElementById('locationSelect').value;
+            if (destination === 'อื่นๆ') {
+                destination = document.getElementById('otherLocation').value;
+            }
+
+            if(!date || !amount || !destination) return alert('กรุณากรอกข้อมูลให้ครบครับ');
+
+            const record = { id: Date.now(), date, type, code, destination, amount: parseFloat(amount) };
+            let history = JSON.parse(localStorage.getItem('driverLogsV3') || '[]');
+            history.push(record);
+            localStorage.setItem('driverLogsV3', JSON.stringify(history));
+
+            alert('บันทึกสำเร็จ!');
+            document.getElementById('amount').value = '';
+            document.getElementById('otherLocation').value = '';
+            renderAll();
+        }
+
+        function deleteRecord(id) {
+            if(confirm('ต้องการลบรายการนี้ใช่หรือไม่?')) {
+                let history = JSON.parse(localStorage.getItem('driverLogsV3') || '[]');
+                history = history.filter(item => item.id !== id);
+                localStorage.setItem('driverLogsV3', JSON.stringify(history));
+                renderAll();
+            }
+        }
+
+        function renderAll() {
+            const history = JSON.parse(localStorage.getItem('driverLogsV3') || '[]');
+            renderSummary(history);
+            renderHistory(history);
+        }
+
+        function renderSummary(history) {
+            const summaryDiv = document.getElementById('summary');
             const monthlyData = history.reduce((acc, item) => {
                 const dateObj = new Date(item.date);
                 const monthKey = dateObj.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
-                
-                if (!acc[monthKey]) {
-                    acc[monthKey] = { total: 0, count: 0, PNK: 0, HDK: 0, SSK: 0 };
-                }
-                
+                if (!acc[monthKey]) acc[monthKey] = { total: 0, count: 0, PNK:0, HDK:0, SSK:0 };
                 acc[monthKey].total += item.amount;
                 acc[monthKey].count += 1;
-                acc[monthKey][item.locationCode] = (acc[monthKey][item.locationCode] || 0) + 1;
-                
+                acc[monthKey][item.code] = (acc[monthKey][item.code] || 0) + 1;
                 return acc;
             }, {});
 
             summaryDiv.innerHTML = '';
-            
             for (const [month, data] of Object.entries(monthlyData)) {
                 summaryDiv.innerHTML += `
-                    <div class="p-4 bg-white rounded-lg border-l-4 border-blue-500 shadow-sm space-y-2">
-                        <div class="font-bold text-blue-800 text-lg border-b pb-1">${month}</div>
-                        <div class="grid grid-cols-3 gap-1 text-xs text-gray-500 font-semibold">
-                            <div class="bg-gray-100 p-1 rounded text-center">PNK: ${data.PNK}</div>
-                            <div class="bg-gray-100 p-1 rounded text-center">HDK: ${data.HDK}</div>
-                            <div class="bg-gray-100 p-1 rounded text-center">SSK: ${data.SSK}</div>
+                    <div class="bg-gradient-to-br from-blue-600 to-blue-700 p-5 rounded-2xl text-white shadow-md">
+                        <div class="text-sm opacity-80 border-b border-blue-400 pb-2 mb-3">${month}</div>
+                        <div class="grid grid-cols-3 gap-2 mb-4">
+                            <div class="text-center bg-blue-500/30 rounded-lg p-1 text-xs">PNK: ${data.PNK}</div>
+                            <div class="text-center bg-blue-500/30 rounded-lg p-1 text-xs">HDK: ${data.HDK}</div>
+                            <div class="text-center bg-blue-500/30 rounded-lg p-1 text-xs">SSK: ${data.SSK}</div>
                         </div>
-                        <div class="flex justify-between items-end pt-1">
-                            <div class="text-sm">รวม <span class="font-bold text-blue-600 text-base">${data.count}</span> เที่ยว</div>
-                            <div class="text-right">
-                                <span class="text-xs text-gray-400 block">รายได้รวม</span>
-                                <span class="font-bold text-green-600 text-lg">${data.total.toLocaleString()} ฿</span>
-                            </div>
+                        <div class="flex justify-between items-center">
+                            <div><span class="text-2xl font-bold">${data.count}</span> <span class="text-xs opacity-80">เที่ยว</span></div>
+                            <div class="text-right"><span class="text-xs opacity-80 block font-light">รายได้รวม</span><span class="text-2xl font-bold">${data.total.toLocaleString()} ฿</span></div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }
         }
 
-        window.onload = renderSummary;
+        function renderHistory(history) {
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = history.reverse().slice(0, 10).map(item => `
+                <div class="bg-white p-3 rounded-xl flex justify-between items-center border border-slate-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-blue-50 text-blue-600 w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs">${item.code}</div>
+                        <div>
+                            <div class="text-sm font-bold text-slate-700">${item.destination}</div>
+                            <div class="text-[10px] text-slate-400">${new Date(item.date).toLocaleDateString('th-TH')} • ${item.type}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="text-sm font-bold text-green-600">${item.amount.toLocaleString()}฿</div>
+                        <button onclick="deleteRecord(${item.id})" class="text-slate-300 hover:text-red-500 p-2"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.onload = renderAll;
     </script>
 </body>
 </html>
